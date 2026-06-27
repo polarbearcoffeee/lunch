@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>午餐點餐系統</title>
+<style>
+  :root{
+    --bg:#f4f6fb; --card:#ffffff; --ink:#1f2430; --soft:#5b6472; --faint:#8b93a3;
+    --line:#e6e9f0; --brand:#4f7cff; --brand2:#7c5cff; --brand-soft:#eef3ff;
+    --ok:#2e9e6b; --ok-soft:#e7f6ee; --warn:#c97a00; --warn-soft:#fff5e3;
+    --danger:#d6453d; --danger-soft:#fdecea;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;}
+  body{
+    background:var(--bg); color:var(--ink);
+    font-family:"Microsoft JhengHei","PingFang TC","Noto Sans TC",system-ui,sans-serif;
+    line-height:1.7; font-size:16px; -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:560px; margin:0 auto; padding:14px 14px 60px;}
+
+  .topnav{
+    display:flex; gap:8px; background:var(--card); border:1px solid var(--line);
+    border-radius:14px; padding:6px; margin-bottom:16px; position:sticky; top:8px; z-index:20;
+    box-shadow:0 2px 10px rgba(20,30,60,.05);
+  }
+  .topnav button{
+    flex:1; border:0; background:transparent; color:var(--soft); font-weight:700;
+    padding:10px; border-radius:10px; font-size:15px; cursor:pointer; font-family:inherit;
+  }
+  .topnav button.on{background:var(--brand-soft); color:var(--brand);}
+
+  .hero{
+    background:linear-gradient(135deg,var(--brand),var(--brand2));
+    color:#fff; border-radius:20px; padding:22px 22px; margin-bottom:16px;
+    box-shadow:0 10px 26px rgba(79,124,255,.28);
+  }
+  .hero h1{margin:0 0 6px; font-size:23px; line-height:1.35;}
+  .hero p{margin:0; opacity:.95; font-size:14.5px;}
+  .hero .meter{margin-top:14px; font-size:13.5px; opacity:.95;}
+  .hero .bar{height:7px; border-radius:99px; background:rgba(255,255,255,.28); margin-top:6px; overflow:hidden;}
+  .hero .bar > i{display:block; height:100%; background:#fff; border-radius:99px; transition:width .4s;}
+
+  .card{
+    background:var(--card); border:1px solid var(--line); border-radius:16px;
+    padding:18px 18px; margin:12px 0; box-shadow:0 2px 10px rgba(20,30,60,.04);
+  }
+  .q{font-weight:800; font-size:16px; margin:0 0 10px; display:flex; align-items:center; gap:7px;}
+  .q small{font-weight:600; color:var(--faint); font-size:13px;}
+
+  .chips{display:flex; flex-wrap:wrap; gap:9px;}
+  .chip{
+    border:1.5px solid var(--line); background:#fff; color:var(--ink);
+    padding:11px 15px; border-radius:12px; font-size:15px; font-weight:700;
+    cursor:pointer; font-family:inherit; line-height:1.3; transition:.12s;
+  }
+  .chip:hover{border-color:#c7d2ff;}
+  .chip.sel{background:var(--brand); border-color:var(--brand); color:#fff;
+    box-shadow:0 4px 12px rgba(79,124,255,.3);}
+  .chip .price{font-weight:600; opacity:.75; font-size:13px;}
+  .chip.sel .price{opacity:.9;}
+  .chip.ghost{background:#f7f8fc; color:var(--soft); border-style:dashed;}
+  .chip.ghost.sel{background:var(--soft); color:#fff; border-color:var(--soft);}
+
+  .big-cta{
+    width:100%; border:0; background:linear-gradient(135deg,var(--brand),var(--brand2));
+    color:#fff; font-weight:800; font-size:17px; padding:15px; border-radius:14px;
+    cursor:pointer; font-family:inherit; margin-top:6px;
+    box-shadow:0 8px 20px rgba(79,124,255,.3);
+  }
+  .big-cta:disabled{opacity:.45; box-shadow:none; cursor:not-allowed;}
+  .btn{
+    border:1.5px solid var(--line); background:#fff; color:var(--ink); font-weight:700;
+    padding:10px 16px; border-radius:11px; cursor:pointer; font-family:inherit; font-size:14.5px;
+  }
+  .btn:hover{border-color:#c7d2ff;}
+  .btn.primary{background:var(--brand); border-color:var(--brand); color:#fff;}
+  .btn.ok{background:var(--ok); border-color:var(--ok); color:#fff;}
+  .btn.danger{background:#fff; border-color:#f0b6b2; color:var(--danger);}
+  .btn.sm{padding:6px 11px; font-size:13px; border-radius:9px;}
+  .btn:disabled{opacity:.5; cursor:wait;}
+  .row{display:flex; gap:8px; flex-wrap:wrap; align-items:center;}
+
+  input.txt, textarea.txt, select.txt{
+    width:100%; border:1.5px solid var(--line); border-radius:11px; padding:11px 12px;
+    font-size:15px; font-family:inherit; color:var(--ink); background:#fff;
+  }
+  input.txt:focus,textarea.txt:focus,select.txt:focus{outline:none; border-color:var(--brand);}
+  textarea.txt{resize:vertical; line-height:1.7;}
+  label.fld{display:block; font-weight:700; font-size:13.5px; color:var(--soft); margin:12px 0 5px;}
+
+  .note{border-radius:12px; padding:11px 14px; margin:10px 0; border:1px solid; font-size:14px;}
+  .note.tip{background:var(--brand-soft); border-color:#cfe0ff;}
+  .note.ok{background:var(--ok-soft); border-color:#bfe6cf; color:#1d6e4b;}
+  .note.warn{background:var(--warn-soft); border-color:#ffe2a8; color:#8a5600;}
+  .note.danger{background:var(--danger-soft); border-color:#f6c9c5; color:#9c322c;}
+
+  .pin-dots{display:flex; gap:10px; justify-content:center; margin:18px 0 4px;}
+  .pin-dots i{width:14px; height:14px; border-radius:50%; background:var(--line); transition:.15s;}
+  .pin-dots i.on{background:var(--brand); transform:scale(1.15);}
+  .keypad{display:grid; grid-template-columns:repeat(3,1fr); gap:10px; max-width:280px; margin:10px auto 0;}
+  .keypad button{
+    border:1.5px solid var(--line); background:#fff; font-size:21px; font-weight:700;
+    padding:14px 0; border-radius:14px; cursor:pointer; font-family:inherit; color:var(--ink);
+  }
+  .keypad button:active{background:var(--brand-soft);}
+  .keypad button.fn{font-size:15px; color:var(--soft);}
+
+  table.stat{width:100%; border-collapse:collapse; font-size:14.5px;}
+  table.stat th,table.stat td{padding:8px 6px; text-align:left; border-bottom:1px solid var(--line);}
+  table.stat th{color:var(--faint); font-weight:700; font-size:12.5px;}
+  table.stat td.n,table.stat th.n{text-align:right; font-variant-numeric:tabular-nums;}
+  .totbar{display:flex; justify-content:space-between; align-items:center; margin-top:12px;
+    background:var(--brand-soft); border-radius:12px; padding:12px 16px;}
+  .totbar b{font-size:20px; color:var(--brand);}
+
+  .pill{display:inline-block; padding:2px 9px; border-radius:99px; font-size:12.5px; font-weight:700;}
+  .pill.green{background:var(--ok-soft); color:var(--ok);}
+  .pill.red{background:var(--danger-soft); color:var(--danger);}
+  .pill.gray{background:#eef0f5; color:var(--soft);}
+  .pill.blue{background:var(--brand-soft); color:var(--brand);}
+
+  .tabs{display:flex; gap:6px; margin-bottom:6px; overflow-x:auto; padding-bottom:2px;}
+  .tabs button{white-space:nowrap; border:0; background:#eef0f5; color:var(--soft); font-weight:700;
+    padding:9px 14px; border-radius:10px; cursor:pointer; font-family:inherit; font-size:14px;}
+  .tabs button.on{background:var(--ink); color:#fff;}
+
+  .editrow{display:flex; gap:8px; align-items:center; margin:8px 0;}
+  .editrow input.name{flex:1; min-width:0;}
+  .editrow input.price{width:90px;}
+  .editrow .x{border:0; background:var(--danger-soft); color:var(--danger); width:34px; height:38px;
+    border-radius:9px; cursor:pointer; font-size:18px; font-weight:700; flex:0 0 auto;}
+
+  .ordercard{border:1px solid var(--line); border-radius:12px; padding:10px 12px; margin:8px 0;}
+  .ordercard .top{display:flex; justify-content:space-between; align-items:center;}
+  .ordercard .nm{font-weight:800;}
+  .ordercard .dt{color:var(--faint); font-size:13px; margin-top:2px;}
+
+  .copybox{background:#0f1530; color:#e8ecff; border-radius:12px; padding:14px; font-size:14px;
+    white-space:pre-wrap; line-height:1.8; font-family:"Cascadia Code",Consolas,monospace; margin-top:8px;}
+
+  .center{text-align:center;}
+  .muted{color:var(--faint); font-size:13.5px;}
+  .hr{height:1px; background:var(--line); margin:14px 0;}
+  .codeline{background:#0f1530;color:#e8ecff;padding:3px 8px;border-radius:6px;
+    font-family:Consolas,monospace;font-size:13.5px;word-break:break-all;}
+  .toast{position:fixed; left:50%; bottom:26px; transform:translateX(-50%) translateY(20px);
+    background:var(--ink); color:#fff; padding:11px 20px; border-radius:12px; font-weight:700;
+    font-size:14.5px; opacity:0; transition:.25s; z-index:99; pointer-events:none; max-width:90vw; text-align:center;}
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+  .spin{width:34px;height:34px;border:3px solid var(--line);border-top-color:var(--brand);
+    border-radius:50%;animation:r .8s linear infinite;margin:40px auto;}
+  @keyframes r{to{transform:rotate(360deg)}}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topnav" id="topnav" style="display:none">
+    <button id="nav-order" class="on" onclick="go('order')">🍱 我要點餐</button>
+    <button id="nav-admin" onclick="go('admin')">🔑 管理後台</button>
+  </div>
+  <div id="app"><div class="spin"></div></div>
+</div>
+<div id="toast" class="toast"></div>
+
+<script>
+/* ============================================================
+   午餐點餐系統 — Google Sheets 後端版
+
+   ↓↓↓ 只要改這一行 ↓↓↓
+   把部署 Apps Script 後拿到的「網頁應用程式」網址（結尾是 /exec）貼進去。
+   ============================================================ */
+const API_URL = 'https://script.google.com/macros/s/AKfycbx6XtpLbmyi2q0tvJuhhy4XVsbkmqJjJ4LxFNGIuniEh_CUJ2lHlLAbvZDuX2rKKy6DkQ/exec';
+/* ============================================================ */
+
+/* ---------- 預設設定（僅作為後端尚未回傳時的備援） ---------- */
+function defaultConfig(){
+  const roster=['王小明','陳美麗','林大華','張志強','李婉婷'];
+  const managers=[];
+  for(let m=1;m<=12;m++) managers.push({month:m,name:roster[(m-1)%roster.length],pin:String(1000+m)});
+  return {
+    title:'午餐點餐單',
+    desc:'請於今天 11:00 前完成點餐，謝謝！要請假請選「我請假」即可。',
+    bentos:[{name:'排骨便當',price:80},{name:'雞腿便當',price:90},{name:'素食便當',price:70}],
+    drinks:[{name:'紅茶',price:25},{name:'冬瓜茶',price:25},{name:'奶茶',price:35}],
+    sugarOptions:['全糖','少糖','半糖','微糖','無糖'],
+    iceOptions:['正常冰','少冰','微冰','去冰','溫','熱'],
+    roster:roster, managers:managers
+  };
+}
+
+/* ---------- API 呼叫層 ---------- */
+async function apiGet(){
+  const r=await fetch(API_URL+'?action=get',{method:'GET',redirect:'follow'});
+  if(!r.ok) throw new Error('HTTP '+r.status);
+  return await r.json();
+}
+async function apiPost(payload){
+  // 用 text/plain 避免 CORS 預檢(preflight)，這是呼叫 Apps Script 的標準作法
+  const r=await fetch(API_URL,{method:'POST',redirect:'follow',
+    headers:{'Content-Type':'text/plain;charset=utf-8'},
+    body:JSON.stringify(payload)});
+  if(!r.ok) throw new Error('HTTP '+r.status);
+  const j=await r.json();
+  if(j && j.ok===false) throw new Error(j.error||'後端錯誤');
+  return j;
+}
+
+/* ---------- 全域狀態 ---------- */
+let config=null, orders=[], view='order', session=null;
+let draft={name:'',custom:'',ordering:null,bento:null,drink:null,sugar:'',ice:''};
+let adminTab='stats', sdraft=null, mdraft=null, busy=false;
+
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function toast(msg){ const t=$('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove('show'),2200); }
+function copy(text){
+  if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(text).then(()=>toast('已複製 ✓')).catch(()=>fallbackCopy(text)); }
+  else fallbackCopy(text);
+}
+function fallbackCopy(text){ const t=document.createElement('textarea'); t.value=text; document.body.appendChild(t); t.select(); try{document.execCommand('copy');toast('已複製 ✓');}catch(e){toast('複製失敗，請手動選取');} t.remove(); }
+
+/* ---------- 資料載入/儲存（都走 API） ---------- */
+async function loadAll(){ const d=await apiGet(); config=d.config||defaultConfig(); orders=d.orders||[]; }
+async function refreshOrders(){ const d=await apiGet(); orders=d.orders||[]; if(d.config) config=d.config; }
+async function saveConfig(){ const d=await apiPost({action:'saveConfig',config}); if(d.config) config=d.config; }
+async function saveOrder(o){ const d=await apiPost({action:'saveOrder',order:o}); if(d.orders) orders=d.orders; }
+async function clearAllOrders(){ const d=await apiPost({action:'clearOrders'}); orders=d.orders||[]; }
+
+/* ============================================================
+   導覽
+   ============================================================ */
+function go(v){ view=v; $('nav-order').classList.toggle('on',v==='order'); $('nav-admin').classList.toggle('on',v==='admin'); render(); }
+function render(){
+  if(!config){ $('app').innerHTML='<div class="spin"></div>'; return; }
+  if(view==='order') return renderOrder();
+  if(view==='admin') return session?renderAdmin():renderLogin();
+}
+
+/* ============================================================
+   點餐頁
+   ============================================================ */
+function captureOrder(){ const ci=$('customName'); if(ci) draft.custom=ci.value; }
+function existingOrder(name){ return orders.find(o=>o.name===name); }
+
+function renderOrder(){
+  const total=config.roster.length;
+  const done=config.roster.filter(n=>existingOrder(n)).length;
+  const pct=total?Math.round(done/total*100):0;
+
+  let h=`<div class="hero">
+    <h1>🍱 ${esc(config.title)}</h1>
+    <p>${esc(config.desc)}</p>
+    <div class="meter">名單點餐進度　${done} / ${total} 人
+      <div class="bar"><i style="width:${pct}%"></i></div>
+    </div>
+  </div>`;
+
+  h+=`<div class="card"><div class="q">👤 你的姓名</div><div class="chips">`;
+  config.roster.forEach(n=>{
+    const ord=existingOrder(n);
+    h+=`<button class="chip ${draft.name===n?'sel':''}" onclick="pickName('${esc(n)}')">${esc(n)}${ord?' ✓':''}</button>`;
+  });
+  h+=`<button class="chip ghost ${draft.name==='__other'?'sel':''}" onclick="pickName('__other')">其他…</button></div>`;
+  if(draft.name==='__other'){
+    h+=`<label class="fld">請輸入你的名字</label>
+    <input class="txt" id="customName" value="${esc(draft.custom)}" placeholder="例如：周怡君" oninput="draft.custom=this.value">`;
+  }
+  const curName=draft.name==='__other'?draft.custom.trim():draft.name;
+  const prev=curName?existingOrder(curName):null;
+  if(prev) h+=`<div class="note tip" style="margin-top:12px">📋 ${esc(curName)} 已經點過囉，可以修改後再送出一次（會覆蓋舊的）。</div>`;
+  h+=`</div>`;
+
+  if(draft.name){
+    h+=`<div class="card"><div class="q">🍽️ 今天要訂餐嗎？</div><div class="chips">
+      <button class="chip ${draft.ordering===true?'sel':''}" onclick="pickOrdering(true)">要訂餐</button>
+      <button class="chip ghost ${draft.ordering===false?'sel':''}" onclick="pickOrdering(false)">我請假，不訂餐</button>
+    </div></div>`;
+
+    if(draft.ordering===true){
+      h+=`<div class="card"><div class="q">🍱 便當 <small>三選一</small></div><div class="chips">`;
+      config.bentos.forEach(b=>{ h+=`<button class="chip ${draft.bento===b.name?'sel':''}" onclick="pickBento('${esc(b.name)}')">${esc(b.name)} <span class="price">$${b.price}</span></button>`; });
+      h+=`<button class="chip ghost ${draft.bento===''?'sel':''}" onclick="pickBento('')">不訂便當</button></div></div>`;
+
+      h+=`<div class="card"><div class="q">🥤 飲料 <small>擇一</small></div><div class="chips">`;
+      config.drinks.forEach(d=>{ h+=`<button class="chip ${draft.drink===d.name?'sel':''}" onclick="pickDrink('${esc(d.name)}')">${esc(d.name)} <span class="price">$${d.price}</span></button>`; });
+      h+=`<button class="chip ghost ${draft.drink===''?'sel':''}" onclick="pickDrink('')">不訂飲料</button></div>`;
+      if(draft.drink&&draft.drink!==''){
+        h+=`<div class="q" style="margin-top:16px">🍬 糖度</div><div class="chips">`;
+        config.sugarOptions.forEach(s=>{ h+=`<button class="chip ${draft.sugar===s?'sel':''}" onclick="pickSugar('${esc(s)}')">${esc(s)}</button>`; });
+        h+=`</div><div class="q" style="margin-top:16px">🧊 冰塊</div><div class="chips">`;
+        config.iceOptions.forEach(s=>{ h+=`<button class="chip ${draft.ice===s?'sel':''}" onclick="pickIce('${esc(s)}')">${esc(s)}</button>`; });
+        h+=`</div>`;
+      }
+      h+=`</div>`;
+    }
+    const ready=isReady();
+    h+=`<button class="big-cta" ${ready&&!busy?'':'disabled'} onclick="submitOrder()">${busy?'送出中…':((prev?'更新我的點餐':'送出點餐')+' ✓')}</button>`;
+    if(!ready&&!busy) h+=`<p class="muted center" style="margin-top:8px">${readyHint()}</p>`;
+  }
+  $('app').innerHTML=h;
+}
+function isReady(){
+  const name=draft.name==='__other'?draft.custom.trim():draft.name;
+  if(!name) return false;
+  if(draft.ordering===null) return false;
+  if(draft.ordering===false) return true;
+  if(draft.bento===null||draft.drink===null) return false;
+  return true;
+}
+function readyHint(){
+  const name=draft.name==='__other'?draft.custom.trim():draft.name;
+  if(!name) return '請先填名字';
+  if(draft.ordering===null) return '請選擇「要訂餐」或「請假」';
+  if(draft.bento===null) return '請選擇便當（或不訂便當）';
+  if(draft.drink===null) return '請選擇飲料（或不訂飲料）';
+  return '';
+}
+function pickName(n){ captureOrder(); draft.name=n; if(n!=='__other') draft.custom=''; renderOrder(); }
+function pickOrdering(b){ captureOrder(); draft.ordering=b; if(!b){draft.bento=null;draft.drink=null;draft.sugar='';draft.ice='';} renderOrder(); }
+function pickBento(n){ captureOrder(); draft.bento=n; renderOrder(); }
+function pickDrink(n){ captureOrder(); draft.drink=n; if(n===''){draft.sugar='';draft.ice='';} renderOrder(); }
+function pickSugar(s){ captureOrder(); draft.sugar=(draft.sugar===s?'':s); renderOrder(); }
+function pickIce(s){ captureOrder(); draft.ice=(draft.ice===s?'':s); renderOrder(); }
+
+async function submitOrder(){
+  captureOrder();
+  const name=draft.name==='__other'?draft.custom.trim():draft.name;
+  if(!name){ toast('請先填名字'); return; }
+  const o={name, ordering:draft.ordering,
+    bento:draft.ordering?(draft.bento||''):'',
+    drink:draft.ordering?(draft.drink||''):'',
+    sugar:draft.sugar||'', ice:draft.ice||''};
+  busy=true; renderOrder();
+  try{ await saveOrder(o); renderConfirm(o); }
+  catch(e){ toast('送出失敗，請檢查網路或稍後再試'); }
+  finally{ busy=false; }
+}
+
+function renderConfirm(o){
+  let detail='';
+  if(!o.ordering) detail='🌴 已登記今天請假，不訂餐';
+  else{
+    const parts=[];
+    parts.push(o.bento?('🍱 '+o.bento):'🍱 不訂便當');
+    if(o.drink){ let d='🥤 '+o.drink; const sub=[o.sugar,o.ice].filter(Boolean); if(sub.length) d+='（'+sub.join('／')+'）'; parts.push(d); }
+    else parts.push('🥤 不訂飲料');
+    detail=parts.join('<br>');
+  }
+  $('app').innerHTML=`<div class="hero" style="text-align:center">
+      <div style="font-size:46px">🎉</div>
+      <h1 style="margin-top:4px">${esc(o.name)}，點好了！</h1>
+      <p>已存到後台 Google 試算表</p>
+    </div>
+    <div class="card center"><div style="font-size:16px; line-height:2">${detail}</div></div>
+    <div class="row" style="justify-content:center">
+      <button class="btn" onclick="reorder('${esc(o.name)}')">修改我的點餐</button>
+      <button class="btn primary" onclick="resetDraft()">換一個人點餐</button>
+    </div>`;
+}
+function reorder(name){
+  const o=existingOrder(name);
+  draft={name:config.roster.includes(name)?name:'__other', custom:config.roster.includes(name)?'':name,
+    ordering:o?o.ordering:null, bento:o?o.bento:null, drink:o?o.drink:null, sugar:o?o.sugar:'', ice:o?o.ice:''};
+  renderOrder();
+}
+function resetDraft(){ draft={name:'',custom:'',ordering:null,bento:null,drink:null,sugar:'',ice:''}; renderOrder(); }
+
+/* ============================================================
+   管理後台 — 登入
+   ============================================================ */
+let pinBuf='';
+function renderLogin(){
+  const dots=[0,1,2,3].map(i=>`<i class="${i<pinBuf.length?'on':''}"></i>`).join('');
+  const thisMonth=new Date().getMonth()+1;
+  const cur=config.managers.find(m=>m.month===thisMonth);
+  $('app').innerHTML=`
+    <div class="hero" style="text-align:center">
+      <div style="font-size:40px">🔑</div>
+      <h1 style="margin-top:4px">管理後台登入</h1>
+      <p>${cur?('本月（'+thisMonth+'月）輪值：'+esc(cur.name)):('本月（'+thisMonth+'月）尚未指定負責人')}</p>
+    </div>
+    <div class="card">
+      <p class="center muted" style="margin-top:0">請輸入你的 4 位數 PIN 碼</p>
+      <div class="pin-dots">${dots}</div>
+      <div id="pinErr" class="center" style="color:var(--danger); font-weight:700; font-size:14px; min-height:20px"></div>
+      <div class="keypad">
+        ${[1,2,3,4,5,6,7,8,9].map(n=>`<button onclick="pinPush('${n}')">${n}</button>`).join('')}
+        <button class="fn" onclick="pinClear()">清除</button>
+        <button onclick="pinPush('0')">0</button>
+        <button class="fn" onclick="pinDel()">⌫</button>
+      </div>
+      <p class="muted center" style="margin-top:16px">忘記 PIN？登入後可在「輪值與 PIN」查看／重設。</p>
+    </div>`;
+}
+function pinPush(d){ if(pinBuf.length>=4) return; pinBuf+=d; if(pinBuf.length===4) tryLogin(); else renderLogin(); }
+function pinDel(){ pinBuf=pinBuf.slice(0,-1); renderLogin(); }
+function pinClear(){ pinBuf=''; renderLogin(); }
+function tryLogin(){
+  const m=config.managers.find(x=>String(x.pin).trim()===pinBuf);
+  if(m){ session=m; pinBuf=''; adminTab='stats'; renderAdmin(); }
+  else{ pinBuf=''; renderLogin(); const e=$('pinErr'); if(e) e.textContent='PIN 碼不正確，再試一次'; }
+}
+function logout(){ session=null; pinBuf=''; sdraft=null; mdraft=null; render(); }
+
+/* ============================================================
+   管理後台 — 主框
+   ============================================================ */
+function renderAdmin(){
+  const thisMonth=new Date().getMonth()+1;
+  $('app').innerHTML=`<div class="hero">
+      <h1>📊 管理後台</h1>
+      <p>登入者：${esc(session.name)}　·　本月 ${thisMonth} 月輪值：${esc((config.managers.find(m=>m.month===thisMonth)||{}).name||'未指定')}</p>
+    </div>
+    <div class="tabs">
+      <button class="${adminTab==='stats'?'on':''}" onclick="setTab('stats')">📊 統計</button>
+      <button class="${adminTab==='settings'?'on':''}" onclick="setTab('settings')">✏️ 菜單／名單</button>
+      <button class="${adminTab==='managers'?'on':''}" onclick="setTab('managers')">👥 輪值與 PIN</button>
+    </div>
+    <div id="tabbody"></div>
+    <div class="hr"></div>
+    <div class="center"><button class="btn sm" onclick="logout()">登出</button></div>`;
+  renderTab();
+}
+function setTab(t){ if(t==='settings'&&!sdraft) sdraft=JSON.parse(JSON.stringify(config)); if(t==='managers'&&!mdraft) mdraft=JSON.parse(JSON.stringify(config.managers)); adminTab=t; renderAdmin(); }
+function renderTab(){ if(adminTab==='stats') return renderStats(); if(adminTab==='settings') return renderSettings(); if(adminTab==='managers') return renderManagers(); }
+
+/* ---------- 統計 ---------- */
+function priceOf(list,name){ const x=list.find(i=>i.name===name); return x?x.price:0; }
+function renderStats(){
+  const submitted=orders;
+  const ordering=submitted.filter(o=>o.ordering);
+  const leave=submitted.filter(o=>!o.ordering);
+
+  let bentoMoney=0,bentoQty=0;
+  const bentoRows=config.bentos.map(b=>{ const q=ordering.filter(o=>o.bento===b.name).length; bentoQty+=q; bentoMoney+=q*b.price;
+    return `<tr><td>${esc(b.name)}</td><td class="n">$${b.price}</td><td class="n">${q}</td><td class="n">$${q*b.price}</td></tr>`; }).join('');
+  let drinkMoney=0,drinkQty=0;
+  const drinkRows=config.drinks.map(d=>{ const q=ordering.filter(o=>o.drink===d.name).length; drinkQty+=q; drinkMoney+=q*d.price;
+    return `<tr><td>${esc(d.name)}</td><td class="n">$${d.price}</td><td class="n">${q}</td><td class="n">$${q*d.price}</td></tr>`; }).join('');
+  const total=bentoMoney+drinkMoney;
+  const notYet=config.roster.filter(n=>!existingOrder(n));
+  const shop=buildShopText(ordering,total);
+
+  const peopleRows=submitted.slice().sort((a,b)=>a.name.localeCompare(b.name,'zh-Hant')).map(o=>{
+    if(!o.ordering) return `<div class="ordercard"><div class="top"><span class="nm">${esc(o.name)}</span><span class="pill gray">請假</span></div></div>`;
+    let line=[]; line.push(o.bento?o.bento:'—（不訂便當）');
+    if(o.drink){ let d=o.drink; const sub=[o.sugar,o.ice].filter(Boolean); if(sub.length) d+='（'+sub.join('／')+'）'; line.push(d); } else line.push('—（不訂飲料）');
+    const cost=(o.bento?priceOf(config.bentos,o.bento):0)+(o.drink?priceOf(config.drinks,o.drink):0);
+    return `<div class="ordercard"><div class="top"><span class="nm">${esc(o.name)}</span><span class="pill blue">$${cost}</span></div><div class="dt">${esc(line.join('　·　'))}</div></div>`;
+  }).join('') || `<p class="muted center">還沒有人點餐</p>`;
+
+  let h=`<div class="row" style="justify-content:flex-end;margin-bottom:4px">
+      <button class="btn sm" id="refreshBtn" onclick="doRefresh()">🔄 重新整理</button></div>
+    <div class="card">
+    <div class="q">🍱 便當統計</div>
+    <table class="stat"><tr><th>品項</th><th class="n">單價</th><th class="n">數量</th><th class="n">金額</th></tr>${bentoRows}
+      <tr style="font-weight:800"><td>小計</td><td></td><td class="n">${bentoQty}</td><td class="n">$${bentoMoney}</td></tr></table>
+    <div class="q" style="margin-top:18px">🥤 飲料統計</div>
+    <table class="stat"><tr><th>品項</th><th class="n">單價</th><th class="n">數量</th><th class="n">金額</th></tr>${drinkRows}
+      <tr style="font-weight:800"><td>小計</td><td></td><td class="n">${drinkQty}</td><td class="n">$${drinkMoney}</td></tr></table>
+    <div class="totbar"><span>💰 今天總金額</span><b>$${total}</b></div>
+  </div>
+  <div class="card">
+    <div class="q">✅ 名單檢查 <small>${config.roster.length-notYet.length} / ${config.roster.length} 已回應</small></div>`;
+  if(notYet.length===0) h+=`<div class="note ok">全部都點好了 🎉</div>`;
+  else h+=`<div class="note warn"><b>還沒點的人（${notYet.length}）：</b><br>${notYet.map(esc).join('、')}</div>
+    <button class="btn sm" onclick="copy('${esc(notYet.join('、'))} 還沒點餐喔，麻煩盡快～')">複製催單訊息</button>`;
+  if(leave.length) h+=`<p class="muted" style="margin-top:10px">🌴 請假：${leave.map(o=>esc(o.name)).join('、')}</p>`;
+  h+=`</div>
+  <div class="card">
+    <div class="q">📋 給店家的訂單</div>
+    <div class="copybox" id="shopText">${esc(shop)}</div>
+    <button class="btn primary sm" style="margin-top:10px" onclick="copy(document.getElementById('shopText').innerText)">複製訂單文字</button>
+  </div>
+  <div class="card">
+    <div class="q">🧾 每人明細 <small>共 ${submitted.length} 筆</small></div>${peopleRows}
+  </div>
+  <div class="card">
+    <div class="q">🗑️ 開始新的一天</div>
+    <p class="muted" style="margin-top:0">清空所有人今天的點餐紀錄（試算表「點餐紀錄」會被清空），菜單與名單保留。</p>
+    <button class="btn danger sm" onclick="confirmClear()">清空今天的點餐紀錄</button>
+  </div>`;
+  $('tabbody').innerHTML=h;
+}
+function buildShopText(ordering,total){
+  const lines=[];
+  config.bentos.forEach(b=>{ const q=ordering.filter(o=>o.bento===b.name).length; if(q>0) lines.push(`${b.name} ${q} 份`); });
+  const map={};
+  ordering.forEach(o=>{ if(o.drink){ const sub=[o.sugar,o.ice].filter(Boolean).join('／'); const key=o.drink+(sub?('（'+sub+'）'):''); map[key]=(map[key]||0)+1; } });
+  Object.keys(map).forEach(k=>lines.push(`${k} ${map[k]} 杯`));
+  if(!lines.length) return '（目前沒有訂餐）';
+  lines.push('—'); lines.push('總金額：'+total+' 元');
+  return lines.join('\n');
+}
+async function doRefresh(){ const b=$('refreshBtn'); if(b){b.disabled=true;b.textContent='更新中…';} try{ await refreshOrders(); toast('已更新'); }catch(e){ toast('更新失敗'); } renderStats(); }
+function confirmClear(){
+  $('tabbody').insertAdjacentHTML('afterbegin',
+   `<div class="note danger" id="clearBox"><b>確定要清空今天所有點餐紀錄嗎？</b>此動作無法復原。
+     <div class="row" style="margin-top:8px">
+       <button class="btn danger sm" onclick="doClear()">確定清空</button>
+       <button class="btn sm" onclick="document.getElementById('clearBox').remove()">取消</button>
+     </div></div>`);
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+async function doClear(){ try{ await clearAllOrders(); toast('已清空，可以開始新的一天 🌅'); }catch(e){ toast('清空失敗，請重試'); } renderStats(); }
+
+/* ---------- 菜單／名單設定 ---------- */
+function captureSettings(){
+  if(!sdraft) return;
+  const t=$('s_title'); if(t) sdraft.title=t.value;
+  const d=$('s_desc'); if(d) sdraft.desc=d.value;
+  document.querySelectorAll('[data-kind]').forEach(inp=>{
+    const kind=inp.dataset.kind,i=+inp.dataset.i,f=inp.dataset.f;
+    if(f==='name') sdraft[kind][i].name=inp.value; else sdraft[kind][i].price=Math.max(0,parseInt(inp.value)||0);
+  });
+  const su=$('s_sugar'); if(su) sdraft.sugarOptions=splitOpts(su.value);
+  const ic=$('s_ice'); if(ic) sdraft.iceOptions=splitOpts(ic.value);
+  const ro=$('s_roster'); if(ro) sdraft.roster=ro.value.split('\n').map(s=>s.trim()).filter(Boolean);
+}
+function splitOpts(v){ return v.split(/[、,\n\s]+/).map(s=>s.trim()).filter(Boolean); }
+
+function renderSettings(){
+  const s=sdraft;
+  const itemRows=kind=>s[kind].map((it,i)=>`
+    <div class="editrow">
+      <input class="txt name" data-kind="${kind}" data-i="${i}" data-f="name" value="${esc(it.name)}" placeholder="名稱">
+      <input class="txt price" type="number" inputmode="numeric" data-kind="${kind}" data-i="${i}" data-f="price" value="${it.price}" placeholder="$">
+      <button class="x" onclick="rmItem('${kind}',${i})" title="刪除">×</button>
+    </div>`).join('');
+  $('tabbody').innerHTML=`
+  <div class="card"><div class="q">📝 表單文字</div>
+    <label class="fld">標題</label><input class="txt" id="s_title" value="${esc(s.title)}">
+    <label class="fld">說明 / 截止時間提醒</label><textarea class="txt" id="s_desc" rows="2">${esc(s.desc)}</textarea></div>
+  <div class="card"><div class="q">🍱 便當（名稱 ＋ 價格）</div>${itemRows('bentos')}
+    <button class="btn sm" onclick="addItem('bentos')">＋ 新增便當</button></div>
+  <div class="card"><div class="q">🥤 飲料（名稱 ＋ 價格）</div>${itemRows('drinks')}
+    <button class="btn sm" onclick="addItem('drinks')">＋ 新增飲料</button></div>
+  <div class="card"><div class="q">🍬 糖度與冰塊選項</div>
+    <label class="fld">糖度（用「、」或換行分隔）</label><input class="txt" id="s_sugar" value="${esc(s.sugarOptions.join('、'))}">
+    <label class="fld">冰塊</label><input class="txt" id="s_ice" value="${esc(s.iceOptions.join('、'))}"></div>
+  <div class="card"><div class="q">👥 必填名單 <small>一行一個名字</small></div>
+    <textarea class="txt" id="s_roster" rows="${Math.max(4,s.roster.length+1)}">${esc(s.roster.join('\n'))}</textarea>
+    <p class="muted" style="margin-top:6px">名單上的人若沒點餐，會在統計頁被標成「還沒點」。</p></div>
+  <div class="row" style="margin-top:4px">
+    <button class="btn ok" id="saveSetBtn" onclick="saveSettings()">儲存設定</button>
+    <button class="btn" onclick="cancelSettings()">取消變更</button>
+    <button class="btn danger sm" style="margin-left:auto" onclick="resetDefaults()">還原成預設範例</button>
+  </div>
+  <p class="muted" style="margin-top:8px">儲存後即時寫回 Google 試算表，所有人下次重新整理就看到新菜單。</p>`;
+}
+function addItem(kind){ captureSettings(); sdraft[kind].push({name:'',price:0}); renderSettings(); }
+function rmItem(kind,i){ captureSettings(); sdraft[kind].splice(i,1); renderSettings(); }
+async function saveSettings(){
+  captureSettings();
+  sdraft.bentos=sdraft.bentos.filter(b=>b.name.trim());
+  sdraft.drinks=sdraft.drinks.filter(d=>d.name.trim());
+  if(!sdraft.title.trim()) sdraft.title='午餐點餐單';
+  const b=$('saveSetBtn'); if(b){b.disabled=true;b.textContent='儲存中…';}
+  config={...config,...sdraft,managers:config.managers};
+  try{ await saveConfig(); sdraft=JSON.parse(JSON.stringify(config)); toast('設定已儲存 ✓'); renderAdmin(); }
+  catch(e){ toast('儲存失敗，請重試'); if(b){b.disabled=false;b.textContent='儲存設定';} }
+}
+function cancelSettings(){ sdraft=JSON.parse(JSON.stringify(config)); toast('已取消變更'); renderAdmin(); }
+async function resetDefaults(){
+  if(!confirm('確定要把菜單、糖冰、名單還原成預設範例嗎？（輪值與 PIN 不變）')) return;
+  const dc=defaultConfig();
+  config={...config,title:dc.title,desc:dc.desc,bentos:dc.bentos,drinks:dc.drinks,sugarOptions:dc.sugarOptions,iceOptions:dc.iceOptions,roster:dc.roster};
+  try{ await saveConfig(); sdraft=JSON.parse(JSON.stringify(config)); toast('已還原預設'); renderAdmin(); }catch(e){ toast('儲存失敗'); }
+}
+
+/* ---------- 輪值與 PIN ---------- */
+const MONTHS=['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+function captureManagers(){
+  if(!mdraft) return;
+  document.querySelectorAll('[data-mrow]').forEach(row=>{
+    const i=+row.dataset.mrow;
+    mdraft[i].month=+row.querySelector('[data-mf="month"]').value;
+    mdraft[i].name=row.querySelector('[data-mf="name"]').value;
+    mdraft[i].pin=row.querySelector('[data-mf="pin"]').value.replace(/\D/g,'').slice(0,4);
+  });
+}
+function renderManagers(){
+  const thisMonth=new Date().getMonth()+1;
+  const rows=mdraft.map((m,i)=>`
+    <div class="card" data-mrow="${i}" style="padding:14px 14px; ${m.month===thisMonth?'border-color:var(--brand); background:var(--brand-soft)':''}">
+      <div class="row" style="justify-content:space-between">
+        <span class="pill ${m.month===thisMonth?'blue':'gray'}">${m.month===thisMonth?'本月輪值':'輪值'}</span>
+        <button class="btn danger sm" onclick="rmManager(${i})">刪除</button>
+      </div>
+      <label class="fld">月份</label>
+      <select class="txt" data-mf="month">${MONTHS.map((mm,idx)=>`<option value="${idx+1}" ${m.month===idx+1?'selected':''}>${mm}</option>`).join('')}</select>
+      <label class="fld">負責人姓名</label><input class="txt" data-mf="name" value="${esc(m.name)}" placeholder="姓名">
+      <label class="fld">PIN 碼（4 位數字）</label><input class="txt" data-mf="pin" inputmode="numeric" maxlength="4" value="${esc(m.pin)}" placeholder="例如 1688">
+    </div>`).join('');
+  $('tabbody').innerHTML=`
+    <div class="note warn">⚠️ <b>第一次使用請務必改掉預設 PIN！</b>每位輪值負責人設一組自己的 4 位數 PIN，用那組就能登入後台。</div>
+    ${rows}
+    <button class="btn sm" onclick="addManager()">＋ 新增一位輪值負責人</button>
+    <div class="hr"></div>
+    <div class="row"><button class="btn ok" id="saveMgrBtn" onclick="saveManagers()">儲存輪值表</button>
+      <button class="btn" onclick="cancelManagers()">取消變更</button></div>
+    <p class="muted" style="margin-top:8px">系統依「目前月份」自動把當月負責人標成「本月輪值」並顯示在登入頁。任一組正確 PIN 都能登入（方便代班）。</p>`;
+}
+function addManager(){ captureManagers(); const used=mdraft.map(m=>m.month); let mo=1; for(let k=1;k<=12;k++){ if(!used.includes(k)){mo=k;break;} } mdraft.push({month:mo,name:'',pin:''}); renderManagers(); }
+function rmManager(i){ captureManagers(); if(mdraft.length<=1){ toast('至少要保留一位，避免無法登入'); return; } mdraft.splice(i,1); renderManagers(); }
+async function saveManagers(){
+  captureManagers();
+  const clean=mdraft.filter(m=>m.name.trim()&&/^\d{4}$/.test(m.pin));
+  if(!clean.length){ toast('請至少填好一位：姓名＋4位數PIN'); return; }
+  const b=$('saveMgrBtn'); if(b){b.disabled=true;b.textContent='儲存中…';}
+  config.managers=clean.sort((a,b)=>a.month-b.month);
+  try{ await saveConfig(); mdraft=JSON.parse(JSON.stringify(config.managers)); toast('輪值表已儲存 ✓'); renderManagers(); }
+  catch(e){ toast('儲存失敗，請重試'); if(b){b.disabled=false;b.textContent='儲存輪值表';} }
+}
+function cancelManagers(){ mdraft=JSON.parse(JSON.stringify(config.managers)); toast('已取消變更'); renderManagers(); }
+
+/* ============================================================
+   設定畫面（尚未填 API_URL）／連線錯誤
+   ============================================================ */
+function renderSetup(){
+  $('topnav').style.display='none';
+  $('app').innerHTML=`
+    <div class="hero"><h1>🛠️ 還差最後一步</h1><p>把你的 Google 試算表後端接上來，就能開始用了。</p></div>
+    <div class="card">
+      <div class="q">設定步驟</div>
+      <ol style="padding-left:20px; margin:6px 0; line-height:2">
+        <li>到 <span class="codeline">script.google.com</span> 新增專案，貼上 <b>後端_AppsScript.gs</b>，存檔。</li>
+        <li>函式選 <b>初始化</b> → 執行 → 授權允許（會自動建立試算表）。</li>
+        <li><b>部署 → 新增部署作業 → 網頁應用程式</b>；執行身分「我」、存取權「<b>任何人</b>」→ 部署。</li>
+        <li>複製結尾是 <span class="codeline">/exec</span> 的網址。</li>
+        <li>用記事本打開這個 HTML，把網址貼進最上面的 <span class="codeline">const API_URL = '...'</span>，存檔後重新整理。</li>
+      </ol>
+      <div class="note tip">填好 API_URL 後重新開啟此頁，就會自動進入點餐畫面。</div>
+    </div>`;
+}
+function renderError(msg){
+  $('topnav').style.display='none';
+  $('app').innerHTML=`<div class="hero" style="background:linear-gradient(135deg,#d6453d,#b5322b)">
+      <h1>⚠️ 連不上後端</h1><p>無法讀取 Google 試算表資料。</p></div>
+    <div class="card">
+      <p>常見原因：</p>
+      <ul style="padding-left:20px;line-height:1.9">
+        <li>API_URL 貼錯，或不是結尾 <span class="codeline">/exec</span> 的網址</li>
+        <li>部署時「誰可以存取」沒有選「<b>任何人</b>」</li>
+        <li>改過 .gs 後忘記「重新部署成新版本」</li>
+        <li>網路問題</li>
+      </ul>
+      <p class="muted">錯誤訊息：${esc(msg)}</p>
+      <button class="btn primary" onclick="boot()">重新嘗試</button>
+    </div>`;
+}
+
+/* ============================================================
+   啟動
+   ============================================================ */
+async function boot(){
+  $('app').innerHTML='<div class="spin"></div>';
+  if(!API_URL){ renderSetup(); return; }
+  try{
+    await loadAll();
+    $('topnav').style.display='flex';
+    render();
+  }catch(e){
+    renderError(String(e.message||e));
+  }
+}
+boot();
+</script>
+</body>
+</html>
