@@ -187,7 +187,7 @@ function defaultConfig(){
     drinks:[{name:'紅茶',price:25},{name:'冬瓜茶',price:25},{name:'奶茶',price:35}],
     sugarOptions:['全糖','少糖','半糖','微糖','無糖'],
     iceOptions:['正常冰','少冰','微冰','去冰','溫','熱'],
-    reminderMsg:'{names} 還沒點餐喔，麻煩盡快～',
+    reminderMsg:'還沒點餐喔，麻煩盡快～',
     roster:roster, managers:managers
   };
 }
@@ -468,8 +468,9 @@ function renderStats(){
     <div class="q">✅ 名單檢查 <small>${config.roster.length-notYet.length} / ${config.roster.length} 已回應</small></div>`;
   if(notYet.length===0) h+=`<div class="note ok">全部都點好了 🎉</div>`;
   else{
-    const tpl=config.reminderMsg||'{names} 還沒點餐喔，麻煩盡快～';
-    const reminderText=tpl.replace(/\{names\}/g,notYet.join('、'));
+    const namesList=notYet.join('、');
+    const tpl=config.reminderMsg||'還沒點餐喔，麻煩盡快～';
+    const reminderText=tpl.includes('{names}')?tpl.replace(/\{names\}/g,namesList):(namesList+' '+tpl);
     h+=`<div class="note warn"><b>還沒點的人（${notYet.length}）：</b><br>${notYet.map(esc).join('、')}</div>
     <button class="btn sm" onclick="copy(${esc(JSON.stringify(reminderText))})">複製催單訊息</button>`;
   }
@@ -552,7 +553,7 @@ function renderSettings(){
     <p class="muted" style="margin-top:6px">名單上的人若沒點餐，會在統計頁被標成「還沒點」。</p></div>
   <div class="card"><div class="q">📣 催單訊息</div>
     <textarea class="txt" id="s_reminder" rows="2">${esc(s.reminderMsg||'')}</textarea>
-    <p class="muted" style="margin-top:6px">統計頁「複製催單訊息」按鈕會複製這段文字，<b>{names}</b> 會自動換成還沒點餐的人名。</p></div>
+    <p class="muted" style="margin-top:6px">統計頁「複製催單訊息」按鈕會自動複製「還沒點餐的人名 ＋ 這段文字」，直接打你想說的話就好，不用自己加名字。（進階：想指定名字出現的位置，可以打 <b>{names}</b>）</p></div>
   <div class="row" style="margin-top:4px">
     <button class="btn ok" id="saveSetBtn" onclick="saveSettings()">儲存設定</button>
     <button class="btn" onclick="cancelSettings()">取消變更</button>
