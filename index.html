@@ -184,6 +184,18 @@
   @keyframes popIn{0%{transform:scale(.94)} 60%{transform:scale(1.03)} 100%{transform:scale(1)}}
   @keyframes drawCheck{to{stroke-dashoffset:0}}
 
+  .chip-pop{animation:chipPop .28s cubic-bezier(.34,1.56,.64,1) both;}
+  @keyframes chipPop{0%{transform:scale(.9)} 60%{transform:scale(1.07)} 100%{transform:scale(1)}}
+
+  .unfurl{animation:unfurl .32s cubic-bezier(.16,1,.3,1) both; transform-origin:top center;}
+  @keyframes unfurl{from{opacity:0; transform:scaleY(.85) translateY(-6px)} to{opacity:1; transform:scaleY(1) translateY(0)}}
+
+  .drop-in{animation:dropIn .3s cubic-bezier(.34,1.56,.64,1) both;}
+  @keyframes dropIn{from{opacity:0; transform:translateY(-16px)} to{opacity:1; transform:translateY(0)}}
+
+  .pulse-ok{animation:pulseOK .5s ease-out;}
+  @keyframes pulseOK{0%{box-shadow:0 0 0 0 rgba(46,158,107,.45)} 100%{box-shadow:0 0 0 12px rgba(46,158,107,0)}}
+
   @media (prefers-reduced-motion:reduce){
     *{transition:none!important;animation:none!important;}
     .check-ic{stroke-dashoffset:0!important;}
@@ -262,11 +274,12 @@ const ICONS={
 };
 function ic(name,size){ size=size||17; return `<svg class="ic" viewBox="0 0 20 20" width="${size}" height="${size}" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">${ICONS[name]||''}</svg>`; }
 function toast(msg){ const t=$('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove('show'),2200); }
-function copy(text){
-  if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(text).then(()=>toast('已複製 ✓')).catch(()=>fallbackCopy(text)); }
-  else fallbackCopy(text);
+function pulseOK(el){ if(!el) return; el.classList.remove('pulse-ok'); void el.offsetWidth; el.classList.add('pulse-ok'); }
+function copy(btn,text){
+  if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(text).then(()=>{toast('已複製 ✓'); pulseOK(btn);}).catch(()=>fallbackCopy(btn,text)); }
+  else fallbackCopy(btn,text);
 }
-function fallbackCopy(text){ const t=document.createElement('textarea'); t.value=text; document.body.appendChild(t); t.select(); try{document.execCommand('copy');toast('已複製 ✓');}catch(e){toast('複製失敗，請手動選取');} t.remove(); }
+function fallbackCopy(btn,text){ const t=document.createElement('textarea'); t.value=text; document.body.appendChild(t); t.select(); try{document.execCommand('copy');toast('已複製 ✓');pulseOK(btn);}catch(e){toast('複製失敗，請手動選取');} t.remove(); }
 
 /* ---------- 資料載入/儲存（都走 API） ---------- */
 async function loadAll(){ const d=await apiGet(); config=d.config||defaultConfig(); orders=d.orders||[]; }
@@ -295,6 +308,9 @@ function captureOrder(){ const ci=$('customName'); if(ci) draft.custom=ci.value;
 function existingOrder(name){ return orders.find(o=>o.name===name); }
 
 function renderOrder(){
+  const pickedSnap=justPicked; justPicked=null;
+  const revealSnap=justRevealedOrdering; justRevealedOrdering=false;
+  const pop=key=>key===pickedSnap?' chip-pop':'';
   const total=config.roster.length;
   const done=config.roster.filter(n=>existingOrder(n)).length;
   const pct=total?Math.round(done/total*100):0;
@@ -310,7 +326,7 @@ function renderOrder(){
   h+=`<div class="card"><div class="q">👤 你的姓名</div><div class="chips">`;
   config.roster.forEach((n,i)=>{
     const ord=existingOrder(n);
-    const cls='chip'+(draft.name===n?' sel':'')+(rosterAnimated?'':' stagger-in');
+    const cls='chip'+(draft.name===n?' sel':'')+(rosterAnimated?'':' stagger-in')+pop('name:'+n);
     const style=rosterAnimated?'':` style="animation-delay:${Math.min(i,14)*45}ms"`;
     h+=`<button class="${cls}"${style} onclick="pickName('${esc(n)}')">${esc(n)}${ord?' ✓':''}</button>`;
   });
@@ -332,18 +348,18 @@ function renderOrder(){
     </div></div>`;
 
     if(draft.ordering===true){
-      h+=`<div class="card"><div class="q">🍱 便當 <small>三選一</small></div><div class="chips">`;
-      config.bentos.forEach(b=>{ h+=`<button class="chip ${draft.bento===b.name?'sel':''}" onclick="pickBento('${esc(b.name)}')">${esc(b.name)} <span class="price">$${b.price}</span></button>`; });
-      h+=`<button class="chip ghost ${draft.bento===''?'sel':''}" onclick="pickBento('')">不訂便當</button></div></div>`;
+      h+=`<div class="card${revealSnap?' unfurl':''}"><div class="q">🍱 便當 <small>三選一</small></div><div class="chips">`;
+      config.bentos.forEach(b=>{ h+=`<button class="chip ${draft.bento===b.name?'sel':''}${pop('bento:'+b.name)}" onclick="pickBento('${esc(b.name)}')">${esc(b.name)} <span class="price">$${b.price}</span></button>`; });
+      h+=`<button class="chip ghost ${draft.bento===''?'sel':''}${pop('bento:')}" onclick="pickBento('')">不訂便當</button></div></div>`;
 
-      h+=`<div class="card"><div class="q">🥤 飲料 <small>擇一</small></div><div class="chips">`;
-      config.drinks.forEach(d=>{ h+=`<button class="chip ${draft.drink===d.name?'sel':''}" onclick="pickDrink('${esc(d.name)}')">${esc(d.name)} <span class="price">$${d.price}</span></button>`; });
-      h+=`<button class="chip ghost ${draft.drink===''?'sel':''}" onclick="pickDrink('')">不訂飲料</button></div>`;
+      h+=`<div class="card${revealSnap?' unfurl':''}"><div class="q">🥤 飲料 <small>擇一</small></div><div class="chips">`;
+      config.drinks.forEach(d=>{ h+=`<button class="chip ${draft.drink===d.name?'sel':''}${pop('drink:'+d.name)}" onclick="pickDrink('${esc(d.name)}')">${esc(d.name)} <span class="price">$${d.price}</span></button>`; });
+      h+=`<button class="chip ghost ${draft.drink===''?'sel':''}${pop('drink:')}" onclick="pickDrink('')">不訂飲料</button></div>`;
       if(draft.drink&&draft.drink!==''){
         h+=`<div class="q" style="margin-top:16px">🍬 糖度</div><div class="chips">`;
-        config.sugarOptions.forEach(s=>{ h+=`<button class="chip ${draft.sugar===s?'sel':''}" onclick="pickSugar('${esc(s)}')">${esc(s)}</button>`; });
+        config.sugarOptions.forEach(s=>{ h+=`<button class="chip ${draft.sugar===s?'sel':''}${pop('sugar:'+s)}" onclick="pickSugar('${esc(s)}')">${esc(s)}</button>`; });
         h+=`</div><div class="q" style="margin-top:16px">🧊 冰塊</div><div class="chips">`;
-        config.iceOptions.forEach(s=>{ h+=`<button class="chip ${draft.ice===s?'sel':''}" onclick="pickIce('${esc(s)}')">${esc(s)}</button>`; });
+        config.iceOptions.forEach(s=>{ h+=`<button class="chip ${draft.ice===s?'sel':''}${pop('ice:'+s)}" onclick="pickIce('${esc(s)}')">${esc(s)}</button>`; });
         h+=`</div>`;
       }
       h+=`</div>`;
@@ -370,12 +386,13 @@ function readyHint(){
   if(draft.drink===null) return '請選擇飲料（或不訂飲料）';
   return '';
 }
-function pickName(n){ captureOrder(); draft.name=n; if(n!=='__other') draft.custom=''; renderOrder(); }
-function pickOrdering(b){ captureOrder(); draft.ordering=b; if(!b){draft.bento=null;draft.drink=null;draft.sugar='';draft.ice='';} renderOrder(); }
-function pickBento(n){ captureOrder(); draft.bento=n; renderOrder(); }
-function pickDrink(n){ captureOrder(); draft.drink=n; if(n===''){draft.sugar='';draft.ice='';} renderOrder(); }
-function pickSugar(s){ captureOrder(); draft.sugar=(draft.sugar===s?'':s); renderOrder(); }
-function pickIce(s){ captureOrder(); draft.ice=(draft.ice===s?'':s); renderOrder(); }
+let justPicked = null, justRevealedOrdering = false;
+function pickName(n){ captureOrder(); draft.name=n; if(n!=='__other') draft.custom=''; justPicked='name:'+n; renderOrder(); }
+function pickOrdering(b){ captureOrder(); draft.ordering=b; if(!b){draft.bento=null;draft.drink=null;draft.sugar='';draft.ice='';} justRevealedOrdering=(b===true); renderOrder(); }
+function pickBento(n){ captureOrder(); draft.bento=n; justPicked='bento:'+n; renderOrder(); }
+function pickDrink(n){ captureOrder(); draft.drink=n; if(n===''){draft.sugar='';draft.ice='';} justPicked='drink:'+n; renderOrder(); }
+function pickSugar(s){ captureOrder(); const ns=(draft.sugar===s?'':s); draft.sugar=ns; justPicked=ns?('sugar:'+ns):null; renderOrder(); }
+function pickIce(s){ captureOrder(); const ns=(draft.ice===s?'':s); draft.ice=ns; justPicked=ns?('ice:'+ns):null; renderOrder(); }
 
 async function submitOrder(){
   captureOrder();
@@ -535,14 +552,14 @@ function renderStats(){
     const tpl=config.reminderMsg||'還沒點餐喔，麻煩盡快～';
     const reminderText=tpl.includes('{names}')?tpl.replace(/\{names\}/g,namesList):(namesList+' '+tpl);
     h+=`<div class="note warn"><b>還沒點的人（${notYet.length}）：</b><br>${notYet.map(esc).join('、')}</div>
-    <button class="btn sm" onclick="copy(${esc(JSON.stringify(reminderText))})">複製催單訊息</button>`;
+    <button class="btn sm" onclick="copy(this,${esc(JSON.stringify(reminderText))})">複製催單訊息</button>`;
   }
   if(leave.length) h+=`<p class="muted" style="margin-top:10px">🌴 請假：${leave.map(o=>esc(o.name)).join('、')}</p>`;
   h+=`</div>
   <div class="card">
     <div class="q">📋 給店家的訂單</div>
     <div class="copybox" id="shopText">${esc(shop)}</div>
-    <button class="btn primary sm" style="margin-top:10px" onclick="copy(document.getElementById('shopText').innerText)">複製訂單文字</button>
+    <button class="btn primary sm" style="margin-top:10px" onclick="copy(this,document.getElementById('shopText').innerText)">複製訂單文字</button>
   </div>
   <div class="card">
     <div class="q">🧾 每人明細 <small>共 ${submitted.length} 筆</small></div>${peopleRows}
@@ -567,7 +584,7 @@ function buildShopText(ordering,total){
 async function doRefresh(){ const b=$('refreshBtn'); if(b){b.disabled=true;b.textContent='更新中…';} try{ await refreshOrders(); toast('已更新'); }catch(e){ toast('更新失敗'); } renderStats(); }
 function confirmClear(){
   $('tabbody').insertAdjacentHTML('afterbegin',
-   `<div class="note danger" id="clearBox"><b>確定要清空今天所有點餐紀錄嗎？</b>此動作無法復原。
+   `<div class="note danger drop-in" id="clearBox"><b>確定要清空今天所有點餐紀錄嗎？</b>此動作無法復原。
      <div class="row" style="margin-top:8px">
        <button class="btn danger sm" onclick="doClear()">確定清空</button>
        <button class="btn sm" onclick="document.getElementById('clearBox').remove()">取消</button>
